@@ -6,7 +6,7 @@ import { setupCounter } from './counter.ts'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
-  <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1>
+  <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333;"></canvas>
 </section>
 `
@@ -24,6 +24,9 @@ const square = [
 let isDrawing = false;
 let lineStart = { x: 0, y: 0 };
 let lineEnd = { x: 0, y: 0};
+let currentAccuracy: number | null = null;
+let blueArea: number | null = null;
+let redArea: number | null = null;
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -41,7 +44,7 @@ function draw() {
     ctx.moveTo(lineStart.x, lineStart.y);
     ctx.lineTo(lineEnd.x, lineEnd.y);
     ctx.strokeStyle = '#ec9539';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.stroke();
   }
   requestAnimationFrame(draw);
@@ -74,6 +77,18 @@ function drawSplit() {
     ctx.lineWidth = 3;
     ctx.stroke();
     ctx.fill();
+  }
+
+  if (currentAccuracy !== null && redArea !== null && blueArea !== null) {
+    ctx.font = "bold 30px sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(`Accuracy: ${currentAccuracy.toFixed(2)}%`, canvas.width / 2, 100);
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillStyle = "#292cc5";
+    ctx.fillText(`Blue Area: ${redArea.toFixed(2)}%`, canvas.width / 2 - 100, 150);
+    ctx.fillStyle = "#ea6161";
+    ctx.fillText(`Red Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 150);
   }
   
   requestAnimationFrame(drawSplit);
@@ -149,7 +164,17 @@ function processSlice(lineStart:Point, lineEnd:Point) {
 
   shapeOne = orderQuadrilateralVertices(shapeOne);
   shapeTwo = orderQuadrilateralVertices(shapeTwo);
+
+  const areaA = getArea(shapeOne);
+  const areaB = getArea(shapeTwo);
+  const totalArea = areaA + areaB;
+  const pctA = (areaA / totalArea) * 100;
+  const pctB = (areaB / totalArea) * 100;
+  let accuracy = 100 - (Math.abs(50 - pctA) * 2);
+  redArea = pctA;
+  blueArea = pctB;
   
+  currentAccuracy = accuracy;
   drawSplit();
 }
 
@@ -184,7 +209,7 @@ function orderQuadrilateralVertices(vertices: Point[]): Point[] {
   if (vertices.length < 4) {
     return vertices;
   }
-  
+
   const centroid = {
     x: (vertices[0].x + vertices[1].x + vertices[2].x + vertices[3].x) / 4,
     y: (vertices[0].y + vertices[1].y + vertices[2].y + vertices[3].y) / 4,
@@ -197,4 +222,13 @@ function orderQuadrilateralVertices(vertices: Point[]): Point[] {
   });
 
   return sorted;
+}
+
+function getArea(poly: Point[]): number {
+  let area = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const next = poly[(i + 1) % poly.length];
+    area += poly[i].x * next.y - next.x * poly[i].y;
+  }
+  return Math.abs(area) / 2;
 }

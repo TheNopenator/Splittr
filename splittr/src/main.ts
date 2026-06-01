@@ -5,56 +5,196 @@ import heroImg from './assets/hero.png'
 import { setupCounter } from './counter.ts'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
+<section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+  <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1>
+  <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333;"></canvas>
 </section>
-
-<div class="ticks"></div>
-
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
-
-<div class="ticks"></div>
-<section id="spacer"></section>
 `
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+const square = [
+  { x: 200, y: 200 },
+  { x: 400, y: 200 },
+  { x: 400, y: 400 },
+  { x: 200, y: 400}
+];
+
+let isDrawing = false;
+let lineStart = { x: 0, y: 0 };
+let lineEnd = { x: 0, y: 0};
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  ctx.moveTo(square[0].x, square[0].y);
+  square.forEach(pt => ctx.lineTo(pt.x, pt.y));
+  ctx.closePath();
+  ctx.strokeStyle = '#ffffff';
+  ctx.fillStyle = '#ffffff';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fill();
+  if (isDrawing) {
+    ctx.beginPath();
+    ctx.moveTo(lineStart.x, lineStart.y);
+    ctx.lineTo(lineEnd.x, lineEnd.y);
+    ctx.strokeStyle = '#ec9539';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+  }
+  requestAnimationFrame(draw);
+}
+
+draw();
+
+function drawSplit() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  if (shapeOne.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(shapeOne[0].x, shapeOne[0].y);
+    shapeOne.forEach(pt => ctx.lineTo(pt.x, pt.y));
+    ctx.closePath();
+    ctx.strokeStyle = '#292cc5';
+    ctx.fillStyle = '#292cc5';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fill();
+  }
+  
+  if (shapeTwo.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(shapeTwo[0].x, shapeTwo[0].y);
+    shapeTwo.forEach(pt => ctx.lineTo(pt.x, pt.y));
+    ctx.closePath();
+    ctx.strokeStyle = '#ea6161';
+    ctx.fillStyle = '#ea6161';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fill();
+  }
+  
+  requestAnimationFrame(drawSplit);
+}
+
+const handleMouseDown = (event: MouseEvent): void => {
+  isDrawing = true;
+
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = event.clientX - rect.left;
+  const mouseY = event.clientY - rect.top;
+
+  lineStart = { x: mouseX, y: mouseY };
+  lineEnd = { x: mouseX, y: mouseY };
+};
+
+canvas.addEventListener('mousedown', handleMouseDown);
+
+const handleMouseMove = (event: MouseEvent): void => {
+  if (!isDrawing) {
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = event.clientX - rect.left;
+  const mouseY = event.clientY - rect.top;
+  lineEnd = { x: mouseX, y: mouseY };
+}
+
+canvas.addEventListener('mousemove', handleMouseMove);
+
+const handleMouseUp = (event: MouseEvent): void => {
+  if (!isDrawing) {
+    return;
+  }
+
+  isDrawing = false;
+  processSlice(lineStart, lineEnd);
+}
+
+window.addEventListener('mouseup', handleMouseUp);
+
+let pts: Point[] = [];
+let shapeOne: Point[] = [];
+let shapeTwo: Point[] = [];
+
+function processSlice(lineStart:Point, lineEnd:Point) {
+  pts = [];
+  shapeOne = [];
+  shapeTwo = [];
+  
+  for (let i = 0; i < square.length; i++) {
+    let currIntersect = intersection(square[i], square[(i + 1) % square.length], lineStart, lineEnd);
+    if (currIntersect != null) {
+      pts.push(currIntersect);
+    }
+  }
+  if (pts.length < 2) {
+    return null;
+  }
+
+  shapeOne.push(pts[0]);
+  shapeTwo.push(pts[0]);
+  shapeOne.push(pts[1]);
+  shapeTwo.push(pts[1]);
+  for (let i = 0; i < square.length; i++) {
+    if (onLeftSide(square[i])) {
+      shapeOne.push(square[i]);
+    } else {
+      shapeTwo.push(square[i]);
+    }
+  }
+
+  shapeOne = orderQuadrilateralVertices(shapeOne);
+  shapeTwo = orderQuadrilateralVertices(shapeTwo);
+  
+  drawSplit();
+}
+
+interface Point { x: number; y: number; }
+
+
+function intersection(p1:Point, p2:Point, p3:Point, p4:Point): Point | null {
+    const denominator = ((p4.y - p3.y) * (p2.x - p1.x)) - ((p4.x - p3.x) * (p2.y - p1.y));
+
+    if (denominator == 0) {
+      return null;
+    }
+
+    const ua = (((p4.x - p3.x) * (p1.y - p3.y)) - ((p4.y - p3.y) * (p1.x - p3.x))) / denominator;
+    const ub = (((p2.x - p1.x) * (p1.y - p3.y)) - ((p2.y - p1.y) * (p1.x - p3.x))) / denominator;
+
+    if (0 <= ua && ua <= 1 && 0 <= ub && ub <= 1) {
+      const intersection_x = p1.x + ua * (p2.x - p1.x);
+      const intersection_y = p1.y + ua * (p2.y - p1.y);
+      return { x: intersection_x, y: intersection_y };
+    } else {
+      return null;
+    }
+}
+
+function onLeftSide(pt:Point) {
+  const cross_product = ((lineEnd.x - lineStart.x) * (pt.y - lineStart.y) - (pt.x - lineStart.x) * (lineEnd.y - lineStart.y));
+  return cross_product >= 0;
+}
+
+function orderQuadrilateralVertices(vertices: Point[]): Point[] {
+  if (vertices.length < 4) {
+    return vertices;
+  }
+  
+  const centroid = {
+    x: (vertices[0].x + vertices[1].x + vertices[2].x + vertices[3].x) / 4,
+    y: (vertices[0].y + vertices[1].y + vertices[2].y + vertices[3].y) / 4,
+  };
+
+  const sorted = [...vertices].sort((a, b) => {
+    const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
+    const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
+    return angleA - angleB;
+  });
+
+  return sorted;
+}

@@ -25,6 +25,7 @@ let scoreHistory: number[] = [];
 let activePolygon: Point[] = [];
 let isDisplayingResult = false;
 let animationFrameCount = 0;
+let feedbackColor = '#ffffff';
 
 activePolygon = generateConvexPolygon(4);
 
@@ -43,7 +44,7 @@ function draw() {
     ctx.beginPath();
     ctx.moveTo(lineStart.x, lineStart.y);
     ctx.lineTo(lineEnd.x, lineEnd.y);
-    ctx.strokeStyle = '#ec9539';
+    ctx.strokeStyle = '#9839ec';
     ctx.lineWidth = 4;
     ctx.stroke();
   }
@@ -57,7 +58,7 @@ function drawSplit() {
   let normal = calculatePerp();
   animationFrameCount++;
 
-  const offset = animationFrameCount * 2;
+  const offset = animationFrameCount;
   
   if (shapeOne.length > 0) {
     ctx.beginPath();
@@ -68,9 +69,9 @@ function drawSplit() {
       ctx.lineTo(offsetPt.x, offsetPt.y)
     });
     ctx.closePath();
-    ctx.strokeStyle = '#292cc5';
+    ctx.strokeStyle = feedbackColor;
     ctx.fillStyle = '#292cc5';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 5;
     ctx.stroke();
     ctx.fill();
   }
@@ -84,16 +85,25 @@ function drawSplit() {
       ctx.lineTo(offsetPt.x, offsetPt.y)
     });
     ctx.closePath();
-    ctx.strokeStyle = '#ea6161';
-    ctx.fillStyle = '#ea6161';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = feedbackColor;
+    ctx.fillStyle = '#ea932e';
+    ctx.lineWidth = 5;
     ctx.stroke();
     ctx.fill();
   }
 
   if (currentAccuracy !== null && redArea !== null && blueArea !== null) {
+    if (currentAccuracy >= 95) {
+      feedbackColor = '#ffd700';
+    } else if (currentAccuracy >= 85) {
+      feedbackColor = '#4caf50';
+    } else if (currentAccuracy < 60) {
+      feedbackColor = '#f44336';
+    } else {
+      feedbackColor = '#ffffff';
+    }
     ctx.font = "bold 30px sans-serif";
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = feedbackColor;
     ctx.textAlign = "center";
     ctx.fillText(`Accuracy: ${currentAccuracy.toFixed(2)}%`, canvas.width / 2, 80);
     ctx.font = "bold 20px sans-serif";
@@ -303,6 +313,6 @@ function calculatePerp() {
   const dx = lineEnd.x - lineStart.x;
   const dy = lineEnd.y - lineStart.y;
   const len = Math.sqrt(dx * dx + dy * dy);
-  const normal = { x: dy / len**2, y: -dx / len**2 };
+  const normal = { x: dy / len, y: -dx / len };
   return normal;
 }

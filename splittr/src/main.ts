@@ -105,8 +105,8 @@ function drawSplit() {
     ctx.font = "bold 20px sans-serif";
     ctx.fillStyle = "#292cc5";
     ctx.fillText(`Blue Area: ${redArea.toFixed(2)}%`, canvas.width / 2 - 100, 130);
-    ctx.fillStyle = "#ea6161";
-    ctx.fillText(`Red Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 130);
+    ctx.fillStyle = "#ea932e";
+    ctx.fillText(`Orange Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 130);
   }
 
   requestAnimationFrame(drawSplit);

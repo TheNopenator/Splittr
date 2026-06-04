@@ -14,25 +14,25 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
-const square = [
-  { x: 200, y: 200 },
-  { x: 400, y: 200 },
-  { x: 400, y: 400 },
-  { x: 200, y: 400}
-];
-
 let isDrawing = false;
 let lineStart = { x: 0, y: 0 };
 let lineEnd = { x: 0, y: 0};
 let currentAccuracy: number | null = null;
 let blueArea: number | null = null;
 let redArea: number | null = null;
+let currentRound = 1;
+let scoreHistory: number[] = [];
+let activePolygon: Point[] = [];
+let isDisplayingResult = false;
+let animationFrameCount = 0;
+
+activePolygon = generateConvexPolygon(4);
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.beginPath();
-  ctx.moveTo(square[0].x, square[0].y);
-  square.forEach(pt => ctx.lineTo(pt.x, pt.y));
+  ctx.moveTo(activePolygon[0].x, activePolygon[0].y);
+  activePolygon.forEach(pt => ctx.lineTo(pt.x, pt.y));
   ctx.closePath();
   ctx.strokeStyle = '#ffffff';
   ctx.fillStyle = '#ffffff';
@@ -54,11 +54,19 @@ draw();
 
 function drawSplit() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let normal = calculatePerp();
+  animationFrameCount++;
+
+  const offset = animationFrameCount * 2;
   
   if (shapeOne.length > 0) {
     ctx.beginPath();
-    ctx.moveTo(shapeOne[0].x, shapeOne[0].y);
-    shapeOne.forEach(pt => ctx.lineTo(pt.x, pt.y));
+    const offsetPt1 = { x: shapeOne[0].x - normal.x * offset, y: shapeOne[0].y - normal.y * offset };
+    ctx.moveTo(offsetPt1.x, offsetPt1.y);
+    shapeOne.forEach(pt => {
+      const offsetPt = { x: pt.x - normal.x * offset, y: pt.y - normal.y * offset };
+      ctx.lineTo(offsetPt.x, offsetPt.y)
+    });
     ctx.closePath();
     ctx.strokeStyle = '#292cc5';
     ctx.fillStyle = '#292cc5';
@@ -69,8 +77,12 @@ function drawSplit() {
   
   if (shapeTwo.length > 0) {
     ctx.beginPath();
-    ctx.moveTo(shapeTwo[0].x, shapeTwo[0].y);
-    shapeTwo.forEach(pt => ctx.lineTo(pt.x, pt.y));
+    const offsetPt2 = { x: shapeTwo[0].x + normal.x * offset, y: shapeTwo[0].y + normal.y * offset };
+    ctx.moveTo(offsetPt2.x, offsetPt2.y);
+    shapeTwo.forEach(pt => {
+      const offsetPt = { x: pt.x + normal.x * offset, y: pt.y + normal.y * offset };
+      ctx.lineTo(offsetPt.x, offsetPt.y)
+    });
     ctx.closePath();
     ctx.strokeStyle = '#ea6161';
     ctx.fillStyle = '#ea6161';
@@ -83,18 +95,37 @@ function drawSplit() {
     ctx.font = "bold 30px sans-serif";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
-    ctx.fillText(`Accuracy: ${currentAccuracy.toFixed(2)}%`, canvas.width / 2, 100);
+    ctx.fillText(`Accuracy: ${currentAccuracy.toFixed(2)}%`, canvas.width / 2, 80);
     ctx.font = "bold 20px sans-serif";
     ctx.fillStyle = "#292cc5";
-    ctx.fillText(`Blue Area: ${redArea.toFixed(2)}%`, canvas.width / 2 - 100, 150);
+    ctx.fillText(`Blue Area: ${redArea.toFixed(2)}%`, canvas.width / 2 - 100, 130);
     ctx.fillStyle = "#ea6161";
-    ctx.fillText(`Red Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 150);
+    ctx.fillText(`Red Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 130);
   }
-  
+
   requestAnimationFrame(drawSplit);
 }
 
+function drawEndScreen() {
+  let totalScore: number = 0;
+  for (let i = 0; i < scoreHistory.length; i++) {
+    totalScore += scoreHistory[i];
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  ctx.font = "bold 30px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText(`Your Score: ${Math.round(totalScore / 5)}`, canvas.width / 2, 80);
+  requestAnimationFrame(drawEndScreen);
+}
+
 const handleMouseDown = (event: MouseEvent): void => {
+  if (isDisplayingResult) {
+    return;
+  }
+  
   isDrawing = true;
 
   const rect = canvas.getBoundingClientRect();
@@ -108,7 +139,7 @@ const handleMouseDown = (event: MouseEvent): void => {
 canvas.addEventListener('mousedown', handleMouseDown);
 
 const handleMouseMove = (event: MouseEvent): void => {
-  if (!isDrawing) {
+  if (!isDrawing || isDisplayingResult) {
     return;
   }
 
@@ -121,12 +152,29 @@ const handleMouseMove = (event: MouseEvent): void => {
 canvas.addEventListener('mousemove', handleMouseMove);
 
 const handleMouseUp = (event: MouseEvent): void => {
-  if (!isDrawing) {
+  if (!isDrawing || isDisplayingResult) {
     return;
   }
 
   isDrawing = false;
-  processSlice(lineStart, lineEnd);
+  let score = processSlice(lineStart, lineEnd);
+  animationFrameCount = 0;
+  if (score != null) {
+    scoreHistory.push(score);
+    isDisplayingResult = true;
+    setTimeout(() => {
+      console.log("2 second intermission");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      currentRound++;
+      if (currentRound <= 5) {
+        activePolygon = generateConvexPolygon(4 + currentRound);
+        draw();
+        isDisplayingResult = false;
+      } else {
+        drawEndScreen();
+      }
+    }, 1000);
+  }
 }
 
 window.addEventListener('mouseup', handleMouseUp);
@@ -140,8 +188,8 @@ function processSlice(lineStart:Point, lineEnd:Point) {
   shapeOne = [];
   shapeTwo = [];
   
-  for (let i = 0; i < square.length; i++) {
-    let currIntersect = intersection(square[i], square[(i + 1) % square.length], lineStart, lineEnd);
+  for (let i = 0; i < activePolygon.length; i++) {
+    let currIntersect = intersection(activePolygon[i], activePolygon[(i + 1) % activePolygon.length], lineStart, lineEnd);
     if (currIntersect != null) {
       pts.push(currIntersect);
     }
@@ -154,16 +202,16 @@ function processSlice(lineStart:Point, lineEnd:Point) {
   shapeTwo.push(pts[0]);
   shapeOne.push(pts[1]);
   shapeTwo.push(pts[1]);
-  for (let i = 0; i < square.length; i++) {
-    if (onLeftSide(square[i])) {
-      shapeOne.push(square[i]);
+  for (let i = 0; i < activePolygon.length; i++) {
+    if (onLeftSide(activePolygon[i])) {
+      shapeOne.push(activePolygon[i]);
     } else {
-      shapeTwo.push(square[i]);
+      shapeTwo.push(activePolygon[i]);
     }
   }
 
-  shapeOne = orderQuadrilateralVertices(shapeOne);
-  shapeTwo = orderQuadrilateralVertices(shapeTwo);
+  shapeOne = orderPolygonVertices(shapeOne);
+  shapeTwo = orderPolygonVertices(shapeTwo);
 
   const areaA = getArea(shapeOne);
   const areaB = getArea(shapeTwo);
@@ -176,6 +224,7 @@ function processSlice(lineStart:Point, lineEnd:Point) {
   
   currentAccuracy = accuracy;
   drawSplit();
+  return accuracy;
 }
 
 interface Point { x: number; y: number; }
@@ -205,7 +254,7 @@ function onLeftSide(pt:Point) {
   return cross_product >= 0;
 }
 
-function orderQuadrilateralVertices(vertices: Point[]): Point[] {
+function orderPolygonVertices(vertices: Point[]): Point[] {
   if (vertices.length < 4) {
     return vertices;
   }
@@ -231,4 +280,29 @@ function getArea(poly: Point[]): number {
     area += poly[i].x * next.y - next.x * poly[i].y;
   }
   return Math.abs(area) / 2;
+}
+
+function generateConvexPolygon(numVertices: number): Point[] {
+  const center = { x:300, y:350 };
+  const angles: number[] = [];
+
+  for (let i = 0; i < numVertices; i++) {
+    angles.push(Math.random() * Math.PI * 2);
+  }
+
+  return orderPolygonVertices(angles.map(angle => {
+    const radius = 120 + Math.random() * 90;
+    return {
+      x: center.x + radius * Math.cos(angle),
+      y: center.y + radius * Math.sin(angle)
+    };
+  }));
+}
+
+function calculatePerp() {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const normal = { x: dy / len**2, y: -dx / len**2 };
+  return normal;
 }

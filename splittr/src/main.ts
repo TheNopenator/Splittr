@@ -185,6 +185,68 @@ const handleMouseUp = (): void => {
 
 window.addEventListener('mouseup', handleMouseUp);
 
+const handleTouchStart = (event: TouchEvent): void => {
+  if (isDisplayingResult) {
+    return;
+  }
+  
+  event.preventDefault();
+  isDrawing = true;
+
+  const rect = canvas.getBoundingClientRect();
+  const touch = event.touches[0];
+  const mouseX = touch.clientX - rect.left;
+  const mouseY = touch.clientY - rect.top;
+
+  lineStart = { x: mouseX, y: mouseY };
+  lineEnd = { x: mouseX, y: mouseY };
+};
+
+canvas.addEventListener('touchstart', handleTouchStart);
+
+const handleTouchMove = (event: TouchEvent): void => {
+  if (!isDrawing || isDisplayingResult) {
+    return;
+  }
+
+  event.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = event.touches[0];
+  const mouseX = touch.clientX - rect.left;
+  const mouseY = touch.clientY - rect.top;
+  lineEnd = { x: mouseX, y: mouseY };
+}
+
+canvas.addEventListener('touchmove', handleTouchMove);
+
+const handleTouchEnd = (): void => {
+  if (!isDrawing || isDisplayingResult) {
+    return;
+  }
+
+  isDrawing = false;
+  let score = processSlice(lineStart, lineEnd);
+  animationFrameCount = 0;
+  if (score != null) {
+    scoreHistory.push(score);
+    isDisplayingResult = true;
+    setTimeout(() => {
+      console.log("2 second intermission");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      currentRound++;
+      if (currentRound <= 5) {
+        activePolygon = generateConvexPolygon(4 + currentRound);
+        draw();
+        isDisplayingResult = false;
+      } else {
+        drawEndScreen();
+      }
+    }, 1000);
+  }
+}
+
+window.addEventListener('touchend', handleTouchEnd);
+
 let pts: Point[] = [];
 let shapeOne: Point[] = [];
 let shapeTwo: Point[] = [];

@@ -157,7 +157,7 @@ const handleMouseMove = (event: MouseEvent): void => {
 
 canvas.addEventListener('mousemove', handleMouseMove);
 
-const handleMouseUp = (event: MouseEvent): void => {
+const handleMouseUp = (): void => {
   if (!isDrawing || isDisplayingResult) {
     return;
   }

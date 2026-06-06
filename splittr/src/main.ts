@@ -200,7 +200,7 @@ function drawEndScreen() {
   for (let i = 0; i < scoreHistory.length; i++) {
     totalScore += scoreHistory[i];
   }
-  submitScore(Math.round(totalScore / 5));
+  submitScore(Math.round(totalScore));
 }
 
 const handleMouseDown = (event: MouseEvent): void => {
@@ -362,7 +362,7 @@ function processSlice(lineStart:Point, lineEnd:Point) {
   const totalArea = areaA + areaB;
   const pctA = (areaA / totalArea) * 100;
   const pctB = (areaB / totalArea) * 100;
-  let accuracy = 100 - (Math.abs(50 - pctA) * 2);
+  let accuracy = (100 - (Math.abs(50 - pctA) * 2)) * 10;
   redArea = pctA;
   blueArea = pctB;
   
@@ -427,7 +427,7 @@ function getArea(poly: Point[]): number {
 }
 
 function generateConvexPolygon(numVertices: number): Point[] {
-  const center = { x:300, y:350 };
+  const center = { x: 300, y: 350 };
   const angles: number[] = [];
 
   for (let i = 0; i < numVertices; i++) {

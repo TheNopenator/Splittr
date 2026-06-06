@@ -8,11 +8,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333;"></canvas>
 </section>
 
-<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000; justify-content: center; align-items: center;">
-  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 30px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000;">
+  <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 30px; max-width: 500px; width: 85%; max-height: 70vh; overflow-y: auto;">
     <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif;">🏆 Leaderboard</h2>
-    <div id="leaderboard-content" style="color: white; font-family: sans-serif; text-align: center;">
-      <p style="color: #888;">Loading...</p>
+    <div id="leaderboard-content" style="color: white; font-family: sans-serif; min-height: 200px;">
+      <p style="color: #888; text-align: center;">Loading...</p>
     </div>
     <button id="close-leaderboard" style="width: 100%; padding: 10px; margin-top: 20px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-family: sans-serif;">Close</button>
   </div>

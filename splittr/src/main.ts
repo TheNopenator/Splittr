@@ -75,49 +75,58 @@ function submitScore(finalScore: number) {
 }
 
 function showLeaderboard() {
-  console.log("showLeaderboard called");
-  const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
-  const content = document.getElementById('leaderboard-content') as HTMLDivElement;
-  console.log("Modal element:", modal, "Content element:", content);
-  
-  if (!modal || !content) {
-    console.error("Modal or content element not found!");
-    return;
-  }
-  
-  modal.style.display = 'flex';
-  console.log("Modal display set to flex");
-
-  console.log("db object:", db);
-  get(ref(db, 'scores')).then((snapshot) => {
-    console.log("Snapshot received:", snapshot.val());
-    const data = snapshot.val();
-    if (data) {
-      const leaderboard = Object.entries(data)
-        .map(([_, score]: any) => ({...score, score: Number(score.score)}))
-        .sort((a: any, b: any) => b.score - a.score)
-        .slice(0, 10);
-      
-      console.log("Leaderboard:", leaderboard);
-      let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
-      html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: center;">Rank</th><th style="padding: 10px; text-align: center;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
-      
-      leaderboard.forEach((entry: any, rank: number) => {
-        const medals = ['🥇', '🥈', '🥉'];
-        const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
-        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 10px;">${medal}</td><td style="padding: 10px;">${entry.playerName}</td><td style="padding: 10px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
-      });
-      
-      html += '</table>';
-      content.innerHTML = html;
-    } else {
-      console.log("No data in Firebase");
-      content.innerHTML = '<p style="color: #888; text-align: center;">No scores yet!</p>';
+  console.log("=== showLeaderboard called ===");
+  try {
+    const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
+    const content = document.getElementById('leaderboard-content') as HTMLDivElement;
+    console.log("Modal element found:", !!modal);
+    console.log("Content element found:", !!content);
+    
+    if (!modal || !content) {
+      console.error("Modal or content element not found!");
+      alert("Error: Modal not found in DOM");
+      return;
     }
-  }).catch((error) => {
-    console.error("Error fetching leaderboard:", error);
-    content.innerHTML = '<p style="color: #f44336; text-align: center;">Error: ' + error.message + '</p>';
-  });
+    
+    modal.style.display = 'block';
+    console.log("Modal display set to block");
+
+    get(ref(db, 'scores')).then((snapshot) => {
+      console.log("Firebase snapshot received");
+      const data = snapshot.val();
+      console.log("Firebase data:", data);
+      
+      if (data) {
+        const leaderboard = Object.entries(data)
+          .map(([_, score]: any) => ({...score, score: Number(score.score)}))
+          .sort((a: any, b: any) => b.score - a.score)
+          .slice(0, 10);
+        
+        console.log("Leaderboard array:", leaderboard);
+        let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
+        html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: center;">Rank</th><th style="padding: 10px; text-align: center;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
+        
+        leaderboard.forEach((entry: any, rank: number) => {
+          const medals = ['🥇', '🥈', '🥉'];
+          const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
+          html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 10px;">${medal}</td><td style="padding: 10px;">${entry.playerName}</td><td style="padding: 10px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
+        });
+        
+        html += '</table>';
+        content.innerHTML = html;
+        console.log("Leaderboard HTML set");
+      } else {
+        console.log("No data in Firebase");
+        content.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No scores yet!</p>';
+      }
+    }).catch((error) => {
+      console.error("Firebase error:", error);
+      content.innerHTML = '<p style="color: #f44336; text-align: center; padding: 20px;">Error: ' + error.message + '</p>';
+    });
+  } catch (err) {
+    console.error("Exception in showLeaderboard:", err);
+    alert("Error: " + err);
+  }
 }
 
 document.getElementById('close-leaderboard')?.addEventListener('click', () => {

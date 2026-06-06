@@ -1,11 +1,38 @@
 import './style.css'
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, push, query, orderByChild, limitToLast, onValue } from 'firebase/database';
+import { getAnalytics } from "firebase/analytics";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
   <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333;"></canvas>
 </section>
+
+<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center;">
+  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 30px; max-width: 500px; width: 90%;">
+    <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif;">🏆 Leaderboard</h2>
+    <div id="leaderboard-content" style="max-height: 400px; overflow-y: auto;">
+      <p style="color: #888; text-align: center;">Loading...</p>
+    </div>
+    <button id="close-leaderboard" style="width: 100%; padding: 10px; margin-top: 20px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-family: sans-serif;">Close</button>
+  </div>
+</div>
 `
+
+const firebaseConfig = {
+  apiKey: "AIzaSyACDKDuExGWH3fsrgbMBRcOMbB9w_9DCeY",
+  authDomain: "splittr-dee33.firebaseapp.com",
+  databaseURL: "https://splittr-dee33-default-rtdb.firebaseio.com",
+  projectId: "splittr-dee33",
+  storageBucket: "splittr-dee33.firebasestorage.app",
+  messagingSenderId: "888712319044",
+  appId: "1:888712319044:web:4bade4e9da4b3b3640ac11",
+  measurementId: "G-T9PJX7S85J"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
@@ -24,6 +51,63 @@ let animationFrameCount = 0;
 let feedbackColor = '#ffffff';
 
 activePolygon = generateConvexPolygon(4);
+
+function submitScore(finalScore: number) {
+  const playerName = prompt("Enter your name for the leaderboard:");
+
+  if (playerName && playerName.trim() !== "") {
+    push(ref(db, 'scores'), {
+      playerName: playerName.trim(),
+      score: finalScore,
+      timestamp: Date.now()
+    }).then(() => {
+      console.log("Score submitted!");
+      showLeaderboard();
+    })
+  }
+}
+
+function showLeaderboard() {
+  const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
+  const content = document.getElementById('leaderboard-content') as HTMLDivElement;
+  
+  modal.style.display = 'flex';
+
+  const scoresRef = query(
+    ref(db, 'scores'),
+    orderByChild('score'),
+    limitToLast(10)
+  );
+
+  onValue(scoresRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const leaderboard = Object.entries(data)
+        .map(([id, score]: any) => score)
+        .sort((a: any, b: any) => b.score - a.score)
+        .slice(0, 10);
+      
+      let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
+      html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: left;">Rank</th><th style="padding: 10px; text-align: left;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
+      
+      leaderboard.forEach((entry: any, rank: number) => {
+        const medals = ['🥇', '🥈', '🥉'];
+        const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
+        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 10px;">${medal}</td><td style="padding: 10px;">${entry.playerName}</td><td style="padding: 10px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
+      });
+      
+      html += '</table>';
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<p style="color: #888; text-align: center;">No scores yet!</p>';
+    }
+  });
+}
+
+document.getElementById('close-leaderboard')?.addEventListener('click', () => {
+  const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
+  modal.style.display = 'none';
+});
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -117,14 +201,7 @@ function drawEndScreen() {
   for (let i = 0; i < scoreHistory.length; i++) {
     totalScore += scoreHistory[i];
   }
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.beginPath();
-  ctx.font = "bold 30px sans-serif";
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-  ctx.fillText(`Your Score: ${Math.round(totalScore / 5)}`, canvas.width / 2, 80);
-  requestAnimationFrame(drawEndScreen);
+  submitScore(Math.round(totalScore / 5));
 }
 
 const handleMouseDown = (event: MouseEvent): void => {

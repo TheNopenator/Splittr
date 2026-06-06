@@ -87,7 +87,7 @@ function showLeaderboard() {
         .slice(0, 10);
       
       let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
-      html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: left;">Rank</th><th style="padding: 10px; text-align: left;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
+      html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: center;">Rank</th><th style="padding: 10px; text-align: center;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
       
       leaderboard.forEach((entry: any, rank: number) => {
         const medals = ['🥇', '🥈', '🥉'];

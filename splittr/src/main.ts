@@ -1,6 +1,6 @@
 import './style.css'
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, push, query, orderByChild, limitToLast, get } from 'firebase/database';
+import { getDatabase, ref, push, get } from 'firebase/database';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
@@ -72,13 +72,7 @@ function showLeaderboard() {
   
   modal.style.display = 'flex';
 
-  const scoresRef = query(
-    ref(db, 'scores'),
-    orderByChild('score'),
-    limitToLast(10)
-  );
-
-  get(scoresRef).then((snapshot) => {
+  get(ref(db, 'scores')).then((snapshot) => {
     const data = snapshot.val();
     if (data) {
       const leaderboard = Object.entries(data)
@@ -100,6 +94,9 @@ function showLeaderboard() {
     } else {
       content.innerHTML = '<p style="color: #888; text-align: center;">No scores yet!</p>';
     }
+  }).catch((error) => {
+    console.error("Error fetching leaderboard:", error);
+    content.innerHTML = '<p style="color: #f44336; text-align: center;">Error loading leaderboard</p>';
   });
 }
 

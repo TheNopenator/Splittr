@@ -8,11 +8,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333;"></canvas>
 </section>
 
-<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center;">
-  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 30px; max-width: 500px; width: 90%;">
+<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000; justify-content: center; align-items: center;">
+  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 30px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
     <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif;">🏆 Leaderboard</h2>
-    <div id="leaderboard-content" style="max-height: 400px; overflow-y: auto;">
-      <p style="color: #888; text-align: center;">Loading...</p>
+    <div id="leaderboard-content" style="color: white; font-family: sans-serif; text-align: center;">
+      <p style="color: #888;">Loading...</p>
     </div>
     <button id="close-leaderboard" style="width: 100%; padding: 10px; margin-top: 20px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-family: sans-serif;">Close</button>
   </div>
@@ -52,9 +52,12 @@ let feedbackColor = '#ffffff';
 activePolygon = generateConvexPolygon(4);
 
 function submitScore(finalScore: number) {
+  console.log("submitScore called with score:", finalScore);
   const playerName = prompt("Enter your name for the leaderboard:");
+  console.log("Player name:", playerName);
 
   if (playerName && playerName.trim() !== "") {
+    console.log("Pushing score to Firebase...");
     push(ref(db, 'scores'), {
       playerName: playerName.trim(),
       score: finalScore,
@@ -62,17 +65,32 @@ function submitScore(finalScore: number) {
     }).then(() => {
       console.log("Score submitted!");
       showLeaderboard();
-    })
+    }).catch((error) => {
+      console.error("Error submitting score:", error);
+      alert("Error submitting score: " + error.message);
+    });
+  } else {
+    console.log("Name was empty or cancelled");
   }
 }
 
 function showLeaderboard() {
+  console.log("showLeaderboard called");
   const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
   const content = document.getElementById('leaderboard-content') as HTMLDivElement;
+  console.log("Modal element:", modal, "Content element:", content);
+  
+  if (!modal || !content) {
+    console.error("Modal or content element not found!");
+    return;
+  }
   
   modal.style.display = 'flex';
+  console.log("Modal display set to flex");
 
+  console.log("db object:", db);
   get(ref(db, 'scores')).then((snapshot) => {
+    console.log("Snapshot received:", snapshot.val());
     const data = snapshot.val();
     if (data) {
       const leaderboard = Object.entries(data)
@@ -80,6 +98,7 @@ function showLeaderboard() {
         .sort((a: any, b: any) => b.score - a.score)
         .slice(0, 10);
       
+      console.log("Leaderboard:", leaderboard);
       let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
       html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: center;">Rank</th><th style="padding: 10px; text-align: center;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
       
@@ -92,11 +111,12 @@ function showLeaderboard() {
       html += '</table>';
       content.innerHTML = html;
     } else {
+      console.log("No data in Firebase");
       content.innerHTML = '<p style="color: #888; text-align: center;">No scores yet!</p>';
     }
   }).catch((error) => {
     console.error("Error fetching leaderboard:", error);
-    content.innerHTML = '<p style="color: #f44336; text-align: center;">Error loading leaderboard</p>';
+    content.innerHTML = '<p style="color: #f44336; text-align: center;">Error: ' + error.message + '</p>';
   });
 }
 

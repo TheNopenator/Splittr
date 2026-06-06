@@ -1,6 +1,6 @@
 import './style.css'
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, push, query, orderByChild, limitToLast, onValue } from 'firebase/database';
+import { getDatabase, ref, push, query, orderByChild, limitToLast, get } from 'firebase/database';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
@@ -78,11 +78,11 @@ function showLeaderboard() {
     limitToLast(10)
   );
 
-  onValue(scoresRef, (snapshot) => {
+  get(scoresRef).then((snapshot) => {
     const data = snapshot.val();
     if (data) {
       const leaderboard = Object.entries(data)
-        .map(([_, score]: any) => score)
+        .map(([_, score]: any) => ({...score, score: Number(score.score)}))
         .sort((a: any, b: any) => b.score - a.score)
         .slice(0, 10);
       

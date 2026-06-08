@@ -50,6 +50,7 @@ let activePolygon: Point[] = [];
 let isDisplayingResult = false;
 let animationFrameCount = 0;
 let feedbackColor = '#ffffff';
+let animationId: number;
 
 activePolygon = generateConvexPolygon(4);
 
@@ -78,20 +79,16 @@ function submitScore(finalScore: number) {
 
 function showLeaderboard() {
   console.log("=== showLeaderboard called ===");
+  cancelAnimationFrame(animationId);
   try {
     const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
     const content = document.getElementById('leaderboard-content') as HTMLDivElement;
-    console.log("Modal element found:", !!modal);
-    console.log("Content element found:", !!content);
     
     if (!modal || !content) {
-      console.error("Modal or content element not found!");
-      alert("Error: Modal not found in DOM");
       return;
     }
     
-    modal.style.display = 'block';
-    console.log("Modal display set to block");
+    modal.style.display = 'flex';
 
     get(ref(db, 'scores')).then((snapshot) => {
       console.log("Firebase snapshot received");
@@ -155,7 +152,7 @@ function draw() {
     ctx.lineWidth = 4;
     ctx.stroke();
   }
-  requestAnimationFrame(draw);
+  animationId = requestAnimationFrame(draw);
 }
 
 draw();
@@ -220,7 +217,7 @@ function drawSplit() {
     ctx.fillText(`Orange Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 130);
   }
 
-  requestAnimationFrame(drawSplit);
+  animationId = requestAnimationFrame(drawSplit);
 }
 
 function drawEndScreen() {

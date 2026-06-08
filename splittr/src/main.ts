@@ -3,18 +3,20 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, get } from 'firebase/database';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+<section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; background: #111;">
   <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
-  <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333;"></canvas>
+  <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
 
-<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000;">
-  <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 30px; max-width: 500px; width: 85%; max-height: 70vh; overflow-y: auto;">
-    <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif;">🏆 Leaderboard</h2>
-    <div id="leaderboard-content" style="color: white; font-family: sans-serif; min-height: 200px;">
-      <p style="color: #888; text-align: center;">Loading...</p>
+<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 10000; align-items: center; justify-content: center;">
+  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 20px; max-width: 450px; width: 85%; max-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+    <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif; font-size: 24px;">🏆 Leaderboard</h2>
+    
+    <div id="leaderboard-content" style="color: white; font-family: sans-serif; overflow-y: auto; flex-grow: 1; min-height: 200px; -webkit-overflow-scrolling: touch;">
+      <p style="color: #888; text-align: center; margin-top: 40px;">Loading...</p>
     </div>
-    <button id="close-leaderboard" style="width: 100%; padding: 10px; margin-top: 20px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-family: sans-serif;">Close</button>
+    
+    <button id="close-leaderboard" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
   </div>
 </div>
 `

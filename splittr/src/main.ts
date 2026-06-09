@@ -8,15 +8,24 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
 
-<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 10000; align-items: center; justify-content: center;">
-  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 20px; max-width: 450px; width: 85%; max-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-    <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif; font-size: 24px;">🏆 Leaderboard</h2>
+<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); z-index: 10000; align-items: center; justify-content: center;">
+  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 25px; max-width: 450px; width: 85%; max-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
     
-    <div id="leaderboard-content" style="color: white; font-family: sans-serif; overflow-y: auto; flex-grow: 1; min-height: 200px; -webkit-overflow-scrolling: touch;">
-      <p style="color: #888; text-align: center; margin-top: 40px;">Loading...</p>
+    <div id="submission-zone" style="display: none; flex-direction: column; text-align: center;">
+      <h2 style="color: white; margin-top: 0; font-family: sans-serif;">🎉 Game Over!</h2>
+      <p style="color: #ccc; font-family: sans-serif;" id="final-score-display"></p>
+      <input type="text" id="player-name-input" placeholder="Your Name" maxlength="15" style="padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #333; background: #222; color: white; margin-bottom: 15px; text-align: center; font-family: sans-serif;">
+      <button id="submit-score-btn" style="width: 100%; padding: 12px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Submit Score</button>
     </div>
-    
-    <button id="close-leaderboard" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
+
+    <div id="leaderboard-zone" style="display: none; flex-direction: column; height: 100%;">
+      <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif; font-size: 24px;">🏆 Leaderboard</h2>
+      <div id="leaderboard-content" style="color: white; font-family: sans-serif; overflow-y: auto; flex-grow: 1; min-height: 200px; -webkit-overflow-scrolling: touch;">
+        <p style="color: #888; text-align: center; margin-top: 40px;">Loading...</p>
+      </div>
+      <button id="close-leaderboard" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
+    </div>
+
   </div>
 </div>
 `
@@ -51,22 +60,22 @@ let isDisplayingResult = false;
 let animationFrameCount = 0;
 let feedbackColor = '#ffffff';
 let animationId: number;
+let globalFinalScore = 0;
 
 activePolygon = generateConvexPolygon(4);
 
-function submitScore(finalScore: number) {
-  console.log("submitScore called with score:", finalScore);
-  const playerName = prompt("Enter your name for the leaderboard:");
-  console.log("Player name:", playerName);
+function submitScore() {
+  const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
+  const playerName = nameInput?.value?.trim();
 
-  if (playerName && playerName.trim() !== "") {
-    console.log("Pushing score to Firebase...");
+  if (playerName && playerName !== "") {
+    console.log("Pushing score to Firebase...", playerName, globalFinalScore);
     push(ref(db, 'scores'), {
-      playerName: playerName.trim(),
-      score: finalScore,
+      playerName: playerName,
+      score: globalFinalScore,
       timestamp: Date.now()
     }).then(() => {
-      console.log("Score submitted!");
+      console.log("Score submitted successfully!");
       showLeaderboard();
     }).catch((error) => {
       console.error("Error submitting score:", error);
@@ -80,58 +89,59 @@ function submitScore(finalScore: number) {
 function showLeaderboard() {
   console.log("=== showLeaderboard called ===");
   cancelAnimationFrame(animationId);
-  try {
-    const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
-    const content = document.getElementById('leaderboard-content') as HTMLDivElement;
-    
-    if (!modal || !content) {
-      return;
-    }
-    
-    modal.style.display = 'flex';
 
-    get(ref(db, 'scores')).then((snapshot) => {
-      console.log("Firebase snapshot received");
-      const data = snapshot.val();
-      console.log("Firebase data:", data);
-      
-      if (data) {
-        const leaderboard = Object.entries(data)
-          .map(([_, score]: any) => ({...score, score: Number(score.score)}))
-          .sort((a: any, b: any) => b.score - a.score)
-          .slice(0, 10);
-        
-        console.log("Leaderboard array:", leaderboard);
-        let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
-        html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: center;">Rank</th><th style="padding: 10px; text-align: center;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
-        
-        leaderboard.forEach((entry: any, rank: number) => {
-          const medals = ['🥇', '🥈', '🥉'];
-          const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
-          html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 10px;">${medal}</td><td style="padding: 10px;">${entry.playerName}</td><td style="padding: 10px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
-        });
-        
-        html += '</table>';
-        content.innerHTML = html;
-        console.log("Leaderboard HTML set");
-      } else {
-        console.log("No data in Firebase");
-        content.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No scores yet!</p>';
-      }
-    }).catch((error) => {
-      console.error("Firebase error:", error);
-      content.innerHTML = '<p style="color: #f44336; text-align: center; padding: 20px;">Error: ' + error.message + '</p>';
-    });
-  } catch (err) {
-    console.error("Exception in showLeaderboard:", err);
-    alert("Error: " + err);
+  const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
+  const subZone = document.getElementById('submission-zone') as HTMLDivElement;
+  const lbZone = document.getElementById('leaderboard-zone') as HTMLDivElement;
+  const content = document.getElementById('leaderboard-content') as HTMLDivElement;
+
+  if (!modal || !content || !subZone || !lbZone) {
+    return;
   }
+
+  modal.style.display = 'flex';
+  subZone.style.display = 'none';
+  lbZone.style.display = 'flex';
+
+  get(ref(db, 'scores')).then((snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const leaderboard = Object.entries(data)
+        .map(([_, score]: any) => ({...score, score: Number(score.score)}))
+        .sort((a: any, b: any) => b.score - a.score)
+        .slice(0, 10);
+      
+      let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
+      html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: left;">Rank</th><th style="padding: 10px; text-align: left;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
+      
+      leaderboard.forEach((entry: any, rank: number) => {
+        const medals = ['🥇', '🥈', '🥉'];
+        const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
+        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 10px;">${medal}</td><td style="padding: 10px;">${entry.playerName}</td><td style="padding: 10px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
+      });
+      
+      html += '</table>';
+      content.innerHTML = html;
+    } else {
+      content.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No scores yet!</p>';
+    }
+  }).catch((error) => {
+    console.error("Firebase fetch error:", error);
+    content.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">Error loading stats</p>`;
+  });
 }
 
 document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
   modal.style.display = 'none';
+  currentRound = 1;
+  scoreHistory = [];
+  isDisplayingResult = false;
+  activePolygon = generateConvexPolygon(5);
+  draw();
 });
+
+document.getElementById('submit-score-btn')?.addEventListener('click', submitScore);
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -221,11 +231,25 @@ function drawSplit() {
 }
 
 function drawEndScreen() {
+  cancelAnimationFrame(animationId);
+
   let totalScore: number = 0;
   for (let i = 0; i < scoreHistory.length; i++) {
     totalScore += scoreHistory[i];
   }
-  submitScore(Math.round(totalScore) / 5);
+  globalFinalScore = totalScore / 5;
+
+  const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
+  const subZone = document.getElementById('submission-zone') as HTMLDivElement;
+  const lbZone = document.getElementById('leaderboard-zone') as HTMLDivElement;
+  const scoreDisplay = document.getElementById('final-score-display') as HTMLParagraphElement;
+
+  if (modal && subZone && lbZone && scoreDisplay) {
+    scoreDisplay.innerText = `Average Accuracy: ${globalFinalScore.toFixed(2)}%`
+    modal.style.display = 'flex';
+    subZone.style.display = 'flex';
+    lbZone.style.display = 'none';
+  }
 }
 
 const handleMouseDown = (event: MouseEvent): void => {

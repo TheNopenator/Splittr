@@ -37,8 +37,8 @@ const firebaseConfig = {
   projectId: "splittr-dee33",
   storageBucket: "splittr-dee33.firebasestorage.app",
   messagingSenderId: "888712319044",
-  appId: "1:888712319044:web:4bade4e9da4b3b3640ac11",
-  measurementId: "G-T9PJX7S85J"
+  appId: "1:888712319044:web:5cf6913a6a30fc8340ac11",
+  measurementId: "G-3177DB2KW4"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -66,23 +66,41 @@ activePolygon = generateConvexPolygon(4);
 
 function submitScore() {
   const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-score-btn') as HTMLButtonElement;
   const playerName = nameInput?.value?.trim();
 
+  console.log("submitScore called. Name:", playerName, "Score:", globalFinalScore);
+
   if (playerName && playerName !== "") {
-    console.log("Pushing score to Firebase...", playerName, globalFinalScore);
-    push(ref(db, 'scores'), {
-      playerName: playerName,
-      score: globalFinalScore,
-      timestamp: Date.now()
-    }).then(() => {
-      console.log("Score submitted successfully!");
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+    
+    console.log("Pushing to Firebase with:", { playerName, score: globalFinalScore, timestamp: Date.now() });
+    
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Firebase request timed out after 10 seconds")), 10000)
+    );
+    
+    Promise.race([
+      push(ref(db, 'scores'), {
+        playerName: playerName,
+        score: globalFinalScore,
+        timestamp: Date.now()
+      }),
+      timeoutPromise
+    ]).then(() => {
       showLeaderboard();
     }).catch((error) => {
-      console.error("Error submitting score:", error);
-      alert("Error submitting score: " + error.message);
+      console.error("Firebase push error:", error);
+      console.error("Error code:", error?.code || "N/A");
+      console.error("Error message:", error?.message || String(error));
+      alert("Firebase Error:\n" + (error?.code || "TIMEOUT") + "\n" + (error?.message || "Request failed"));
+      if (submitBtn) submitBtn.disabled = false;
     });
   } else {
-    console.log("Name was empty or cancelled");
+    console.log("✗ Name was empty");
+    alert("Please enter a name");
   }
 }
 

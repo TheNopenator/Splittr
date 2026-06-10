@@ -62,7 +62,9 @@ let feedbackColor = '#ffffff';
 let animationId: number;
 let globalFinalScore = 0;
 
-activePolygon = generateConvexPolygon(4);
+while (activePolygon.length < 4) {
+  activePolygon = generateConvexPolygon(4);
+}
 
 function submitScore() {
   const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
@@ -155,7 +157,10 @@ document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   currentRound = 1;
   scoreHistory = [];
   isDisplayingResult = false;
-  activePolygon = generateConvexPolygon(5);
+  activePolygon = generateConvexPolygon(4);
+  while (activePolygon.length < 4) {
+    activePolygon = generateConvexPolygon(4);
+  }
   draw();
 });
 
@@ -228,7 +233,7 @@ function drawSplit() {
     if (currentAccuracy >= 90) {
       feedbackColor = '#4caf50';
     } else if (currentAccuracy >= 60) {
-      feedbackColor = '#ffd700';
+      feedbackColor = '#f7da34';
     } else if (currentAccuracy < 60) {
       feedbackColor = '#f44336';
     } else {
@@ -317,12 +322,15 @@ const handleMouseUp = (): void => {
       currentRound++;
       if (currentRound <= 5) {
         activePolygon = generateConvexPolygon(4 + currentRound);
+        while (activePolygon.length < 4) {
+          activePolygon = generateConvexPolygon(4 + currentRound);
+        }
         draw();
         isDisplayingResult = false;
       } else {
         drawEndScreen();
       }
-    }, 2000);
+    }, 1800);
   }
 }
 
@@ -388,12 +396,15 @@ const handleTouchEnd = (): void => {
       currentRound++;
       if (currentRound <= 5) {
         activePolygon = generateConvexPolygon(4 + currentRound);
+        while (activePolygon.length <= 3) {
+          activePolygon = generateConvexPolygon(4 + currentRound);
+        }
         draw();
         isDisplayingResult = false;
       } else {
         drawEndScreen();
       }
-    }, 1000);
+    }, 1800);
   }
 }
 
@@ -475,22 +486,26 @@ function onLeftSide(pt:Point) {
 }
 
 function orderPolygonVertices(vertices: Point[]): Point[] {
-  if (vertices.length < 4) {
-    return vertices;
+  if (vertices.length < 3) {
+    return [...vertices];
   }
 
-  const centroid = {
-    x: (vertices[0].x + vertices[1].x + vertices[2].x + vertices[3].x) / 4,
-    y: (vertices[0].y + vertices[1].y + vertices[2].y + vertices[3].y) / 4,
-  };
+  let lowestVertex = vertices[0];
+  for (let i = 1; i < vertices.length; i++) {
+    if (vertices[i].y < lowestVertex.y || (vertices[i].y == lowestVertex.y && vertices[i].x < lowestVertex.x)) {
+      lowestVertex = vertices[i];
+    }
+  }
 
-  const sorted = [...vertices].sort((a, b) => {
-    const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
-    const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
+  const remaining = vertices.filter(v => v !== lowestVertex);
+
+  remaining.sort((a, b) => {
+    const angleA = Math.atan2(a.y - lowestVertex.y, a.x - lowestVertex.x);
+    const angleB = Math.atan2(b.y - lowestVertex.y, b.x - lowestVertex.x);
     return angleA - angleB;
   });
 
-  return sorted;
+  return [lowestVertex, ...remaining];
 }
 
 function getArea(poly: Point[]): number {
@@ -510,13 +525,13 @@ function generateConvexPolygon(numVertices: number): Point[] {
     angles.push(Math.random() * Math.PI * 2);
   }
 
-  return orderPolygonVertices(angles.map(angle => {
+  return grahamScan(orderPolygonVertices(angles.map(angle => {
     const radius = 120 + Math.random() * 90;
     return {
       x: center.x + radius * Math.cos(angle),
       y: center.y + radius * Math.sin(angle)
     };
-  }));
+  })));
 }
 
 function calculatePerp() {
@@ -525,4 +540,24 @@ function calculatePerp() {
   const len = Math.sqrt(dx * dx + dy * dy);
   const normal = { x: dy / len, y: -dx / len };
   return normal;
+}
+
+function grahamScan(sortedVertices: Point[]) {
+  let stack: Point[] = [];
+  if (sortedVertices.length < 3) {
+    return [...sortedVertices];
+  }
+  stack.push(sortedVertices[0]);
+  stack.push(sortedVertices[1]);
+  for (let i = 2; i < sortedVertices.length; i++) {
+    while (stack.length > 1 && crossProduct(stack[stack.length - 2], stack[stack.length - 1], sortedVertices[i]) <= 0) {
+      stack.pop();
+    }
+    stack.push(sortedVertices[i]);
+  }
+  return stack;
+}
+
+function crossProduct(p1: Point, p2: Point, p3: Point) {
+  return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y)* (p3.x - p1.x);
 }

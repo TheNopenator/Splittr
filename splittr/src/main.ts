@@ -226,9 +226,9 @@ function drawSplit() {
 
   if (currentAccuracy !== null && redArea !== null && blueArea !== null) {
     if (currentAccuracy >= 95) {
-      feedbackColor = '#ffd700';
-    } else if (currentAccuracy >= 85) {
       feedbackColor = '#4caf50';
+    } else if (currentAccuracy >= 85) {
+      feedbackColor = '#ffd700';
     } else if (currentAccuracy < 60) {
       feedbackColor = '#f44336';
     } else {
@@ -322,7 +322,7 @@ const handleMouseUp = (): void => {
       } else {
         drawEndScreen();
       }
-    }, 1000);
+    }, 2000);
   }
 }
 
@@ -365,7 +365,7 @@ const handleTouchMove = (event: TouchEvent): void => {
 
   const mouseX = (touch.clientX - rect.left) * scaleX;
   const mouseY = (touch.clientY - rect.top) * scaleY;
-  
+
   lineEnd = { x: mouseX, y: mouseY };
 }
 

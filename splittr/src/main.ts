@@ -225,9 +225,9 @@ function drawSplit() {
   }
 
   if (currentAccuracy !== null && redArea !== null && blueArea !== null) {
-    if (currentAccuracy >= 95) {
+    if (currentAccuracy >= 90) {
       feedbackColor = '#4caf50';
-    } else if (currentAccuracy >= 85) {
+    } else if (currentAccuracy >= 60) {
       feedbackColor = '#ffd700';
     } else if (currentAccuracy < 60) {
       feedbackColor = '#f44336';

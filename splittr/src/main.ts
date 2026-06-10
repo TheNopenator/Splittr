@@ -338,8 +338,12 @@ const handleTouchStart = (event: TouchEvent): void => {
 
   const rect = canvas.getBoundingClientRect();
   const touch = event.touches[0];
-  const mouseX = touch.clientX - rect.left;
-  const mouseY = touch.clientY - rect.top;
+
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  const mouseX = (touch.clientX - rect.left) * scaleX;
+  const mouseY = (touch.clientY - rect.top) * scaleY;
 
   lineStart = { x: mouseX, y: mouseY };
   lineEnd = { x: mouseX, y: mouseY };
@@ -355,8 +359,13 @@ const handleTouchMove = (event: TouchEvent): void => {
   event.preventDefault();
   const rect = canvas.getBoundingClientRect();
   const touch = event.touches[0];
-  const mouseX = touch.clientX - rect.left;
-  const mouseY = touch.clientY - rect.top;
+
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  const mouseX = (touch.clientX - rect.left) * scaleX;
+  const mouseY = (touch.clientY - rect.top) * scaleY;
+  
   lineEnd = { x: mouseX, y: mouseY };
 }
 

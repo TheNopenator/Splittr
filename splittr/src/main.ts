@@ -3,31 +3,28 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, get } from 'firebase/database';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+<div id="start-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20000; font-family: sans-serif; box-sizing: border-box; padding: 20px;">
+  <div style="text-align: center; max-width: 500px; width: 100%;">
+    <h1 style="color: #fff; font-size: 56px; margin-bottom: 5px; letter-spacing: 5px;">
+      <span style="color: #ea932e;">Spli</span><span style="color: #292cc5;">ttr</span>
+    </h1>
+    <br>
+    <div style="border-top: 3px dashed #b700ff; width: 150px; margin: 2px auto;"></div>
+    
+    <p style="color: #aaa; font-size: 16px; line-height: 1.6; margin-bottom: 40px; padding: 0 10px; margin: 20px">
+      A precision polygon-splitting game. Challenge yourself to achieve perfect 50/50 splits across 5 rounds and compete on the global leaderboard.
+    </p>
+    
+    <button id="start-game-btn" style="padding: 15px 40px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #ea932e, #292cc5); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
+      START SPLITTING
+    </button>
+  </div>
+</div>
+
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; background: #111;">
   <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
-
-<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); z-index: 10000; align-items: center; justify-content: center;">
-  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 25px; max-width: 450px; width: 85%; max-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-    
-    <div id="submission-zone" style="display: none; flex-direction: column; text-align: center;">
-      <h2 style="color: white; margin-top: 0; font-family: sans-serif;">🎉 Game Over!</h2>
-      <p style="color: #ccc; font-family: sans-serif;" id="final-score-display"></p>
-      <input type="text" id="player-name-input" placeholder="Your Name" maxlength="15" style="padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #333; background: #222; color: white; margin-bottom: 15px; text-align: center; font-family: sans-serif;">
-      <button id="submit-score-btn" style="width: 100%; padding: 12px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Submit Score</button>
-    </div>
-
-    <div id="leaderboard-zone" style="display: none; flex-direction: column; height: 100%;">
-      <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif; font-size: 24px;">🏆 Leaderboard</h2>
-      <div id="leaderboard-content" style="color: white; font-family: sans-serif; overflow-y: auto; flex-grow: 1; min-height: 200px; -webkit-overflow-scrolling: touch;">
-        <p style="color: #888; text-align: center; margin-top: 40px;">Loading...</p>
-      </div>
-      <button id="close-leaderboard" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
-    </div>
-
-  </div>
-</div>
 `
 
 const firebaseConfig = {
@@ -61,10 +58,7 @@ let animationFrameCount = 0;
 let feedbackColor = '#ffffff';
 let animationId: number;
 let globalFinalScore = 0;
-
-while (activePolygon.length < 4) {
-  activePolygon = generateConvexPolygon(4);
-}
+let gameState: 'MENU' | 'PLAYING' = 'MENU';
 
 function submitScore() {
   const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
@@ -188,7 +182,23 @@ function draw() {
   animationId = requestAnimationFrame(draw);
 }
 
-draw();
+function initStartScreen() {
+  const startScreen = document.getElementById('start-screen') as HTMLDivElement;
+  const startBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
+
+  if (!startScreen || !startBtn) {
+    return;
+  }
+
+  startBtn.addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    gameState = 'PLAYING';
+    activePolygon = generateConvexPolygon(5);
+    draw();
+  });
+}
+
+initStartScreen();
 
 function drawSplit() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -293,7 +303,7 @@ const handleMouseDown = (event: MouseEvent): void => {
 canvas.addEventListener('mousedown', handleMouseDown);
 
 const handleMouseMove = (event: MouseEvent): void => {
-  if (!isDrawing || isDisplayingResult) {
+  if (!isDrawing || isDisplayingResult || gameState == 'MENU') {
     return;
   }
 
@@ -337,7 +347,7 @@ const handleMouseUp = (): void => {
 window.addEventListener('mouseup', handleMouseUp);
 
 const handleTouchStart = (event: TouchEvent): void => {
-  if (isDisplayingResult) {
+  if (isDisplayingResult || gameState == 'MENU') {
     return;
   }
   

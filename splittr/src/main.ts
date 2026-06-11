@@ -23,6 +23,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; background: #111;">
   <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
+  <h2>Score: <div id="score-display" style="display: inline-block">0</div></h2>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
 
@@ -77,6 +78,7 @@ let animationFrameCount = 0;
 let feedbackColor = '#ffffff';
 let animationId: number;
 let globalFinalScore = 0;
+let cumAccuracy: number[] = [];
 let gameState: 'MENU' | 'PLAYING' = 'MENU';
 
 function submitScore() {
@@ -268,6 +270,7 @@ function drawSplit() {
     } else {
       feedbackColor = '#ffffff';
     }
+    
     ctx.font = "bold 30px sans-serif";
     ctx.fillStyle = feedbackColor;
     ctx.textAlign = "center";
@@ -285,11 +288,7 @@ function drawSplit() {
 function drawEndScreen() {
   cancelAnimationFrame(animationId);
 
-  let totalScore: number = 0;
-  for (let i = 0; i < scoreHistory.length; i++) {
-    totalScore += scoreHistory[i];
-  }
-  globalFinalScore = totalScore / 5;
+  globalFinalScore = cumAccuracy[4];
 
   const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
   const subZone = document.getElementById('submission-zone') as HTMLDivElement;
@@ -483,6 +482,13 @@ function processSlice(lineStart:Point, lineEnd:Point) {
   blueArea = pctB;
   
   currentAccuracy = accuracy;
+
+  cumAccuracy[currentRound - 1] = currentAccuracy + (currentRound > 1 ? cumAccuracy[currentRound - 2] : 0);
+  const displayElement = document.getElementById("score-display");
+  if (displayElement !== null) {
+    displayElement.textContent = String(cumAccuracy[currentRound - 1].toFixed(2));
+  }
+
   drawSplit();
   return accuracy;
 }

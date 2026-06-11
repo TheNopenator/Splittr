@@ -25,6 +25,25 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
+
+<div id="leaderboard-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.9); z-index: 10000; align-items: center; justify-content: center;">
+  <div style="background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 25px; max-width: 450px; width: 85%; max-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+    
+    <div id="submission-zone" style="display: none; flex-direction: column; text-align: center;">
+      <h2 style="color: white; margin-top: 0; font-family: sans-serif;">🎉 Game Over!</h2>
+      <p style="color: #ccc; font-family: sans-serif;" id="final-score-display"></p>
+      <input type="text" id="player-name-input" placeholder="Your Name" maxlength="15" style="padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #333; background: #222; color: white; margin-bottom: 15px; text-align: center; font-family: sans-serif;">
+      <button id="submit-score-btn" style="width: 100%; padding: 12px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Submit Score</button>
+    </div>
+
+    <div id="leaderboard-zone" style="display: none; flex-direction: column; height: 100%;">
+      <h2 style="color: white; text-align: center; margin-top: 0; font-family: sans-serif; font-size: 24px;">🏆 Leaderboard</h2>
+      <div id="leaderboard-content" style="color: white; font-family: sans-serif; overflow-y: auto; flex-grow: 1; min-height: 200px; -webkit-overflow-scrolling: touch;">
+        <p style="color: #888; text-align: center; margin-top: 40px;">Loading...</p>
+      </div>
+      <button id="close-leaderboard" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
+    </div>
+  </div>
 `
 
 const firebaseConfig = {
@@ -331,9 +350,9 @@ const handleMouseUp = (): void => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       currentRound++;
       if (currentRound <= 5) {
-        activePolygon = generateConvexPolygon(4 + currentRound);
+        activePolygon = generateConvexPolygon(5 + currentRound);
         while (activePolygon.length < 4) {
-          activePolygon = generateConvexPolygon(4 + currentRound);
+          activePolygon = generateConvexPolygon(5 + currentRound);
         }
         draw();
         isDisplayingResult = false;
@@ -405,9 +424,9 @@ const handleTouchEnd = (): void => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       currentRound++;
       if (currentRound <= 5) {
-        activePolygon = generateConvexPolygon(4 + currentRound);
+        activePolygon = generateConvexPolygon(5 + currentRound);
         while (activePolygon.length <= 3) {
-          activePolygon = generateConvexPolygon(4 + currentRound);
+          activePolygon = generateConvexPolygon(5 + currentRound);
         }
         draw();
         isDisplayingResult = false;

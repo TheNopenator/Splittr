@@ -1,6 +1,7 @@
 import './style.css'
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, get } from 'firebase/database';
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div id="start-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20000; font-family: sans-serif; box-sizing: border-box; padding: 20px;">
@@ -59,7 +60,17 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6LeV0B8tAAAAAJC8ux29B_sUZjUMsBwkH7grcAIq'),
+  isTokenAutoRefreshEnabled: true
+});
+
+export const db = getDatabase(app);
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;

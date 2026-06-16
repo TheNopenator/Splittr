@@ -65,7 +65,7 @@ if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
   (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 
-const appCheck = initializeAppCheck(app, {
+initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6LeV0B8tAAAAAJC8ux29B_sUZjUMsBwkH7grcAIq'),
   isTokenAutoRefreshEnabled: true
 });

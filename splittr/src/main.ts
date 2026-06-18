@@ -307,7 +307,7 @@ function drawEndScreen() {
   const scoreDisplay = document.getElementById('final-score-display') as HTMLParagraphElement;
 
   if (modal && subZone && lbZone && scoreDisplay) {
-    scoreDisplay.innerText = `Average Accuracy: ${globalFinalScore.toFixed(2)}%`
+    scoreDisplay.innerText = `Your Accuracy: ${globalFinalScore.toFixed(2)}`
     modal.style.display = 'flex';
     subZone.style.display = 'flex';
     lbZone.style.display = 'none';

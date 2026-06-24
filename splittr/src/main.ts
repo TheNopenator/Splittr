@@ -55,8 +55,8 @@ const firebaseConfig = {
   projectId: "splittr-dee33",
   storageBucket: "splittr-dee33.firebasestorage.app",
   messagingSenderId: "888712319044",
-  appId: "1:888712319044:web:5cf6913a6a30fc8340ac11",
-  measurementId: "G-3177DB2KW4"
+  appId: "1:888712319044:web:4bade4e9da4b3b3640ac11",
+  measurementId: "G-T9PJX7S85J"
 };
 
 const app = initializeApp(firebaseConfig);

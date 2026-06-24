@@ -77,7 +77,6 @@ let activePolygon: Point[] = [];
 let isDisplayingResult = false;
 let animationFrameCount = 0;
 let feedbackColor = '#ffffff';
-let animationId: number;
 let globalFinalScore = 0;
 let cumAccuracy: number[] = [];
 let gameState: 'MENU' | 'PLAYING' = 'MENU';
@@ -205,7 +204,7 @@ function draw() {
     ctx.lineWidth = 4;
     ctx.stroke();
   }
-  animationId = requestAnimationFrame(draw);
+  requestAnimationFrame(draw);
 }
 
 function initStartScreen() {
@@ -287,7 +286,7 @@ function drawSplit() {
     ctx.fillText(`Orange Area: ${blueArea.toFixed(2)}%`, canvas.width / 2 + 100, 130);
   }
 
-  animationId = requestAnimationFrame(drawSplit);
+  requestAnimationFrame(drawSplit);
 }
 
 function drawEndScreen() {

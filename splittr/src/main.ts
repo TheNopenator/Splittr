@@ -136,12 +136,13 @@ function showLeaderboard() {
   const content = document.getElementById('leaderboard-content') as HTMLDivElement;
 
   if (!modal || !content || !subZone || !lbZone) {
+    console.error("DOM Elements missing from showLeaderboard!");
     return;
   }
 
-  modal.style.display = 'flex';
-  subZone.style.display = 'none';
-  lbZone.style.display = 'flex';
+  modal.style.setProperty('display', 'flex', 'important');
+  subZone.style.setProperty('display', 'none', 'important');
+  lbZone.style.setProperty('display', 'flex', 'important');
 
   get(ref(db, 'scores')).then((snapshot) => {
     const data = snapshot.val();
@@ -151,13 +152,13 @@ function showLeaderboard() {
         .sort((a: any, b: any) => b.score - a.score)
         .slice(0, 10);
       
-      let html = '<table style="width: 100%; border-collapse: collapse; color: white; font-family: sans-serif;">';
-      html += '<tr style="border-bottom: 1px solid #333;"><th style="padding: 10px; text-align: left;">Rank</th><th style="padding: 10px; text-align: left;">Name</th><th style="padding: 10px; text-align: right;">Score</th></tr>';
+      let html = '<table style="width: 100%; table-layout: fixed; border-collapse: collapse; color: white; font-family: sans-serif;">';
+      html += '<tr style="border-bottom: 2px solid #333;"><th style="padding: 12px 5px; text-align: left; width: 20%;">Rank</th><th style="padding: 12px 5px; text-align: left; width: 50%;">Name</th><th style="padding: 12px 5px; text-align: right; width: 30%;">Score</th></tr>';
       
       leaderboard.forEach((entry: any, rank: number) => {
         const medals = ['🥇', '🥈', '🥉'];
         const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
-        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 10px;">${medal}</td><td style="padding: 10px;">${entry.playerName}</td><td style="padding: 10px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
+        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 12px 5px;">${medal}</td><td style="padding: 12px 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.playerName}</td><td style="padding: 12px 5px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
       });
       
       html += '</table>';

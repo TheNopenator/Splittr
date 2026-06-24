@@ -35,7 +35,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <h2 style="color: white; margin-top: 0; font-family: sans-serif;">🎉 Game Over!</h2>
       <p style="color: #ccc; font-family: sans-serif;" id="final-score-display"></p>
       <input type="text" id="player-name-input" placeholder="Your Name" maxlength="15" style="padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #333; background: #222; color: white; margin-bottom: 15px; text-align: center; font-family: sans-serif;">
-      <button id="submit-score-btn" style="width: 100%; padding: 12px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Submit Score</button>
+      <button type="button" id="submit-score-btn" style="width: 100%; padding: 12px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Submit Score</button>
     </div>
 
     <div id="leaderboard-zone" style="display: none; flex-direction: column; height: 100%;">
@@ -92,7 +92,11 @@ let globalFinalScore = 0;
 let cumAccuracy: number[] = [];
 let gameState: 'MENU' | 'PLAYING' = 'MENU';
 
-function submitScore() {
+function submitScore(e?: Event) {
+  if (e) {
+    e.preventDefault();
+  }
+
   const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
   const submitBtn = document.getElementById('submit-score-btn') as HTMLButtonElement;
   const playerName = nameInput?.value?.trim();
@@ -190,7 +194,7 @@ document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   draw();
 });
 
-document.getElementById('submit-score-btn')?.addEventListener('click', submitScore);
+document.getElementById('submit-score-btn')?.addEventListener('click', (e) => submitScore(e));
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);

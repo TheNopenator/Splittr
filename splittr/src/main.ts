@@ -128,7 +128,6 @@ function submitScore(e?: Event) {
 
 function showLeaderboard() {
   console.log("=== showLeaderboard called ===");
-  cancelAnimationFrame(animationId);
 
   const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
   const subZone = document.getElementById('submission-zone') as HTMLDivElement;
@@ -292,8 +291,6 @@ function drawSplit() {
 }
 
 function drawEndScreen() {
-  cancelAnimationFrame(animationId);
-
   globalFinalScore = cumAccuracy[4];
 
   const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;

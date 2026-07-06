@@ -42,7 +42,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div id="leaderboard-content" style="color: white; font-family: sans-serif; overflow-y: auto; flex-grow: 1; min-height: 200px; -webkit-overflow-scrolling: touch;">
         <p style="color: #888; text-align: center; margin-top: 40px;">Loading...</p>
       </div>
-      <button id="close-leaderboard" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
+      <button id="close-leaderboard" onClick="window.location.reload();" style="width: 100%; padding: 12px; margin-top: 15px; background: #292cc5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: sans-serif;">Close</button>
     </div>
   </div>
 `

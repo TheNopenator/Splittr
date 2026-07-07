@@ -78,6 +78,7 @@ const sliceSound = new Howl({
 const backgroundTrack = new Howl({
   src: ['./audio/8bit Bossa.mp3'],
   volume: 0.4,
+  loop: true,
   preload: true
 })
 

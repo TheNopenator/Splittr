@@ -436,6 +436,7 @@ const handleTouchEnd = (): void => {
   }
 
   isDrawing = false;
+  sliceSound.play();
   let score = processSlice(lineStart, lineEnd);
   animationFrameCount = 0;
   if (score != null) {

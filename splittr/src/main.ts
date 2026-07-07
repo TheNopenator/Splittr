@@ -1,6 +1,7 @@
 import './style.css'
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, get } from 'firebase/database';
+import { Howl } from 'howler';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div id="start-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20000; font-family: sans-serif; box-sizing: border-box; padding: 20px;">
@@ -64,6 +65,12 @@ export const db = getDatabase(app);
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
+
+const sliceSound = new Howl({
+  src: ['./audio/slice.mp3'],
+  volume: 0.5,
+  preload: true
+});
 
 let isDrawing = false;
 let lineStart = { x: 0, y: 0 };
@@ -216,6 +223,9 @@ function initStartScreen() {
   }
 
   startBtn.addEventListener('click', () => {
+    if (Howler.ctx && Howler.ctx.state == 'suspended') {
+      Howler.ctx.resume();
+    }
     startScreen.style.display = 'none';
     gameState = 'PLAYING';
     activePolygon = generateConvexPolygon(5);
@@ -341,6 +351,7 @@ const handleMouseUp = (): void => {
   }
 
   isDrawing = false;
+  sliceSound.play();
   let score = processSlice(lineStart, lineEnd);
   animationFrameCount = 0;
   if (score != null) {

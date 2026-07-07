@@ -1,7 +1,7 @@
 import './style.css'
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push, get } from 'firebase/database';
-import { Howl } from 'howler';
+import { Howl, Howler } from 'howler';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div id="start-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20000; font-family: sans-serif; box-sizing: border-box; padding: 20px;">
@@ -19,11 +19,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <button id="start-game-btn" style="padding: 15px 40px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #ea932e, #292cc5); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
       START SPLITTING
     </button>
+    <button id="daily-game-btn" style="padding: 15px 40px; margin: 20px 20px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #2b9939, #b33cce); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
+      DAILY CHALLENGE
+    </button>
   </div>
 </div>
 
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; background: #111;">
-  <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr Prototype</h1><br>
+  <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr</h1><br>
   <h2>Score: <div id="score-display" style="display: inline-block">0</div></h2>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
@@ -71,6 +74,12 @@ const sliceSound = new Howl({
   volume: 0.5,
   preload: true
 });
+
+const backgroundTrack = new Howl({
+  src: ['./audio/8bit Bossa.mp3'],
+  volume: 0.4,
+  preload: true
+})
 
 let isDrawing = false;
 let lineStart = { x: 0, y: 0 };
@@ -226,6 +235,7 @@ function initStartScreen() {
     if (Howler.ctx && Howler.ctx.state == 'suspended') {
       Howler.ctx.resume();
     }
+    backgroundTrack.play();
     startScreen.style.display = 'none';
     gameState = 'PLAYING';
     activePolygon = generateConvexPolygon(5);

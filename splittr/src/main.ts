@@ -362,7 +362,6 @@ const handleMouseUp = (): void => {
   }
 
   isDrawing = false;
-  sliceSound.play();
   let score = processSlice(lineStart, lineEnd);
   animationFrameCount = 0;
   if (score != null) {
@@ -482,6 +481,8 @@ function processSlice(lineStart:Point, lineEnd:Point) {
     return null;
   }
 
+  sliceSound.play();
+  
   shapeOne.push(pts[0]);
   shapeTwo.push(pts[0]);
   shapeOne.push(pts[1]);

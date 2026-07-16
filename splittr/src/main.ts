@@ -812,10 +812,3 @@ function grahamScan(sortedVertices: Point[]) {
 function crossProduct(p1: Point, p2: Point, p3: Point) {
   return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y)* (p3.x - p1.x);
 }
-
-function getMsUntilMidnight(): number {
-  const now = new Date();
-  const midnight = new Date();
-  midnight.setHours(24, 0, 0, 0);
-  return midnight.getTime() - now.getTime();
-}

@@ -20,7 +20,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       START SPLITTING
     </button>
     <button id="daily-game-btn" style="padding: 15px 40px; margin: 20px 20px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #2b9939, #b33cce); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
-      DAILY CHALLENGE</br>
+      DAILY CHALLENGE<br>
     </button>
   </div>
 </div>

@@ -1,6 +1,6 @@
 import './style.css'
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, push, get } from 'firebase/database';
+import { getDatabase, ref, push, get, set } from 'firebase/database';
 import { Howl, Howler } from 'howler';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -20,13 +20,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       START SPLITTING
     </button>
     <button id="daily-game-btn" style="padding: 15px 40px; margin: 20px 20px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #2b9939, #b33cce); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
-      DAILY CHALLENGE
+      DAILY CHALLENGE</br>
     </button>
   </div>
 </div>
 
 <section id="game-container" style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; background: #111;">
   <h1 style="color: white; margin-bottom: 10px; font-family: sans-serif;">Splittr</h1><br>
+  <h3 id="theme-display" style="display: none; color: #ec9539; font-family: sans-serif; font-size: 20px; margin: 5px 0 15px 0; font-style: italic; letter-spacing: 1px;"></h3>
   <h2>Score: <div id="score-display" style="display: inline-block">0</div></h2>
   <canvas id="gameCanvas" width="600" height="600" style="background: #1a1a1a; border: 2px solid #333; max-width: 95vw; max-height: 95vw; box-sizing: border-box;"></canvas>
 </section>
@@ -97,6 +98,73 @@ let feedbackColor = '#ffffff';
 let globalFinalScore = 0;
 let cumAccuracy: number[] = [];
 let gameState: 'MENU' | 'PLAYING' = 'MENU';
+let activeTheme: DailyTheme | null = null;
+let activeTextureImage: HTMLImageElement | null = null;
+type GameMode = 'FREE_PLAY' | 'DAILY_CHALLENGE';
+let currentGameMode: GameMode | null = null;
+let levels: Point[][] = [];
+
+interface DailyTheme {
+  name: string;
+  texturePath: string;
+}
+
+const DAILY_THEMES: DailyTheme[] = [
+  { name: "Pizza Night", texturePath: "./textures/pizza.png" },
+  { name: "Freshly Baked Bread", texturePath: "./textures/bread.png" },
+  { name: "High Eggspectations", texturePath: "./textures/egg.png" },
+  { name: "Say Cheese", texturePath: "./textures/cheese.png" },
+  { name: "Cookie Dough", texturePath: "./textures/cookie.png" },
+  { name: "Mining for Diamonds", texturePath: "./textures/diamond.png" },
+  { name: "Birthday Cake", texturePath: "./textures/cake.png" },
+  { name: "Spring Flowers", texturePath: "./textures/flowers.png" },
+  { name: "Cherry Pie", texturePath: "./textures/pie.png" }
+];
+
+function setDailyTheme() {
+  const seed = getDailySeed();
+  currentGameMode = 'DAILY_CHALLENGE';
+  activeTheme = DAILY_THEMES[seed % DAILY_THEMES.length];
+  const themeDisplay = document.getElementById('theme-display');
+  if (themeDisplay) {
+    themeDisplay.innerText = `Today's Theme: ${activeTheme.name}`;
+    themeDisplay.style.display = 'block';
+  }
+  activeTextureImage = new Image();
+  activeTextureImage.src = activeTheme.texturePath;
+  activeTextureImage.onload = () => {};
+}
+
+function getDailySeed(): number {
+  const now = new Date();
+  const yyyy = now.getUTCFullYear();
+  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(now.getUTCDate()).padStart(2, '0');
+  return parseInt(`${yyyy}${mm}${dd}`, 10);
+}
+
+function createSeededRandom(seed: number) {
+  let state = seed;
+
+  return function() {
+    let z = (state += 0x9e3779b9);
+    z = Math.imul(z ^ (z >>> 16), 0x21f0aaad);
+    z = Math.imul(z ^ (z >>> 15), 0x735a2d97);
+    return ((z ^ (z >>> 15)) >>> 0) / 4294967296;
+  };
+}
+
+function generateDailyLevels() {
+  const seed = getDailySeed();
+  const randomEngine = createSeededRandom(seed);
+
+  levels = [];
+  for (let i = 0; i < 3; i++) {
+    const numVertices: number = Math.floor(randomEngine() * 3) + 3;
+    levels.push(generateConvexPolygon(numVertices, randomEngine));
+  }
+  return levels;
+}
 
 function submitScore(e?: Event) {
   if (e) {
@@ -142,6 +210,55 @@ function submitScore(e?: Event) {
   }
 }
 
+function submitDailyScore(e?: Event) {
+  if (e) {
+    e.preventDefault();
+  }
+
+  const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-score-btn') as HTMLButtonElement;
+  const playerName = nameInput?.value?.trim();
+
+  const dateId = String(getDailySeed());
+
+  console.log("submitDailyScore called. Name:", playerName, "Score:", globalFinalScore, "Date:", dateId);
+
+  if (playerName && playerName !== "") {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+
+    const safeUsernameKey = playerName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const dailyScoreRef = ref(db, `daily_scores/${dateId}/${safeUsernameKey}`);
+    
+    console.log("Pushing to Realtime Database with:", { playerName, score: globalFinalScore, timestamp: Date.now() });
+    
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Firebase request timed out after 10 seconds")), 10000)
+    );
+    
+    Promise.race([
+      set(dailyScoreRef, {
+        playerName: playerName,
+        score: globalFinalScore,
+        timestamp: Date.now()
+      }),
+      timeoutPromise
+    ]).then(() => {
+      showLeaderboard();
+    }).catch((error) => {
+      console.error("Firebase push error:", error);
+      console.error("Error code:", error?.code || "N/A");
+      console.error("Error message:", error?.message || String(error));
+      alert("Firebase Error:\n" + (error?.code || "TIMEOUT") + "\n" + (error?.message || "Request failed"));
+      if (submitBtn) submitBtn.disabled = false;
+    });
+  } else {
+    console.log("✗ Name was empty");
+    alert("Please enter a name");
+  }
+}
+
 function showLeaderboard() {
   console.log("=== showLeaderboard called ===");
 
@@ -159,7 +276,15 @@ function showLeaderboard() {
   subZone.style.setProperty('display', 'none', 'important');
   lbZone.style.setProperty('display', 'flex', 'important');
 
-  get(ref(db, 'scores')).then((snapshot) => {
+  let dbRef;
+  if (currentGameMode === 'DAILY_CHALLENGE') {
+    const dateId = String(getDailySeed());
+    dbRef = ref(db, `daily_scores/${dateId}`);
+  } else {
+    dbRef = ref(db, `scores`);
+  }
+
+  get(dbRef).then((snapshot) => {
     const data = snapshot.val();
     if (data) {
       const leaderboard = Object.entries(data)
@@ -168,12 +293,14 @@ function showLeaderboard() {
         .slice(0, 10);
       
       let html = '<table style="width: 100%; table-layout: fixed; border-collapse: collapse; color: white; font-family: sans-serif;">';
-      html += '<tr style="border-bottom: 2px solid #333;"><th style="padding: 12px 5px; text-align: left; width: 20%;">Rank</th><th style="padding: 12px 5px; text-align: left; width: 50%;">Name</th><th style="padding: 12px 5px; text-align: right; width: 30%;">Score</th></tr>';
+      const scoreHeader = 'Score';
+      html += `<tr style="border-bottom: 2px solid #333;"><th style="padding: 12px 5px; text-align: left; width: 20%;">Rank</th><th style="padding: 12px 5px; text-align: left; width: 50%;">Name</th><th style="padding: 12px 5px; text-align: right; width: 30%;">${scoreHeader}</th></tr>`;
       
       leaderboard.forEach((entry: any, rank: number) => {
         const medals = ['🥇', '🥈', '🥉'];
         const medal = rank < 3 ? medals[rank] : `${rank + 1}.`;
-        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 12px 5px;">${medal}</td><td style="padding: 12px 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.playerName}</td><td style="padding: 12px 5px; text-align: right; color: #ec9539; font-weight: bold;">${entry.score.toFixed(2)}</td></tr>`;
+        const scoreDisplay = entry.score.toFixed(2);
+        html += `<tr style="border-bottom: 1px solid #222;"><td style="padding: 12px 5px;">${medal}</td><td style="padding: 12px 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.playerName}</td><td style="padding: 12px 5px; text-align: right; color: #ec9539; font-weight: bold;">${scoreDisplay}</td></tr>`;
       });
       
       html += '</table>';
@@ -200,7 +327,13 @@ document.getElementById('close-leaderboard')?.addEventListener('click', () => {
   draw();
 });
 
-document.getElementById('submit-score-btn')?.addEventListener('click', (e) => submitScore(e));
+document.getElementById('submit-score-btn')?.addEventListener('click', (e) => {
+  if (currentGameMode === 'DAILY_CHALLENGE') {
+    submitDailyScore(e);
+  } else {
+    submitScore(e);
+  }
+});
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -208,10 +341,19 @@ function draw() {
   ctx.moveTo(activePolygon[0].x, activePolygon[0].y);
   activePolygon.forEach(pt => ctx.lineTo(pt.x, pt.y));
   ctx.closePath();
-  ctx.strokeStyle = '#ffffff';
-  ctx.fillStyle = '#ffffff';
-  ctx.lineWidth = 3;
-  ctx.stroke();
+  if (currentGameMode === 'DAILY_CHALLENGE' && activeTextureImage) {
+    const pattern = ctx.createPattern(activeTextureImage, 'repeat');
+    if (pattern && activeTheme) {
+      ctx.strokeStyle = '#000000';
+      ctx.lineJoin = 'round';
+      ctx.fillStyle = pattern;
+    }
+  } else {
+    ctx.strokeStyle = '#ffffff';
+    ctx.fillStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
   ctx.fill();
   if (isDrawing) {
     ctx.beginPath();
@@ -227,6 +369,7 @@ function draw() {
 function initStartScreen() {
   const startScreen = document.getElementById('start-screen') as HTMLDivElement;
   const startBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
+  const dailyBtn = document.getElementById('daily-game-btn') as HTMLButtonElement;
 
   if (!startScreen || !startBtn) {
     return;
@@ -239,9 +382,24 @@ function initStartScreen() {
     backgroundTrack.play();
     startScreen.style.display = 'none';
     gameState = 'PLAYING';
+    currentGameMode = 'FREE_PLAY';
     activePolygon = generateConvexPolygon(5);
     draw();
   });
+
+  dailyBtn.addEventListener('click', () => {
+    if (Howler.ctx && Howler.ctx.state == 'suspended') {
+      Howler.ctx.resume();
+    }
+    backgroundTrack.play();
+    startScreen.style.display = 'none';
+    gameState = 'PLAYING';
+    currentGameMode = 'DAILY_CHALLENGE';
+    setDailyTheme();
+    let levels = generateDailyLevels();
+    activePolygon = levels[0];
+    draw();
+  })
 }
 
 initStartScreen();
@@ -254,35 +412,57 @@ function drawSplit() {
   const offset = animationFrameCount;
   
   if (shapeOne.length > 0) {
+    ctx.save();
+    const dx = -normal.x * offset;
+    const dy = -normal.y * offset;
+    ctx.translate(dx, dy);
     ctx.beginPath();
-    const offsetPt1 = { x: shapeOne[0].x - normal.x * offset, y: shapeOne[0].y - normal.y * offset };
-    ctx.moveTo(offsetPt1.x, offsetPt1.y);
+    ctx.moveTo(shapeOne[0].x, shapeOne[0].y);
     shapeOne.forEach(pt => {
-      const offsetPt = { x: pt.x - normal.x * offset, y: pt.y - normal.y * offset };
-      ctx.lineTo(offsetPt.x, offsetPt.y)
+      ctx.lineTo(pt.x, pt.y)
     });
     ctx.closePath();
     ctx.strokeStyle = feedbackColor;
-    ctx.fillStyle = '#292cc5';
+    if (currentGameMode === 'DAILY_CHALLENGE' && activeTextureImage) {
+      const pattern = ctx.createPattern(activeTextureImage, 'repeat');
+      if (pattern && activeTheme) {
+        ctx.fillStyle = pattern;
+        ctx.strokeStyle = '#292cc5';
+      }
+    } else {
+      ctx.fillStyle = '#292cc5';
+    }
     ctx.lineWidth = 5;
     ctx.stroke();
     ctx.fill();
+    ctx.restore();
   }
   
   if (shapeTwo.length > 0) {
+    ctx.save();
+    const dx = normal.x * offset;
+    const dy = normal.y * offset;
+    ctx.translate(dx, dy);
     ctx.beginPath();
-    const offsetPt2 = { x: shapeTwo[0].x + normal.x * offset, y: shapeTwo[0].y + normal.y * offset };
-    ctx.moveTo(offsetPt2.x, offsetPt2.y);
+    ctx.moveTo(shapeTwo[0].x, shapeTwo[0].y);
     shapeTwo.forEach(pt => {
-      const offsetPt = { x: pt.x + normal.x * offset, y: pt.y + normal.y * offset };
-      ctx.lineTo(offsetPt.x, offsetPt.y)
+      ctx.lineTo(pt.x, pt.y)
     });
     ctx.closePath();
     ctx.strokeStyle = feedbackColor;
-    ctx.fillStyle = '#ea932e';
+    if (currentGameMode === 'DAILY_CHALLENGE' && activeTextureImage) {
+      const pattern = ctx.createPattern(activeTextureImage, 'repeat');
+      if (pattern && activeTheme) {
+        ctx.strokeStyle = '#ea932e';
+        ctx.fillStyle = pattern;
+      }
+    } else {
+      ctx.fillStyle = '#ea932e';
+    }
     ctx.lineWidth = 5;
     ctx.stroke();
     ctx.fill();
+    ctx.restore();
   }
 
   if (currentAccuracy !== null && redArea !== null && blueArea !== null) {
@@ -311,7 +491,7 @@ function drawSplit() {
 }
 
 function drawEndScreen() {
-  globalFinalScore = cumAccuracy[4];
+  globalFinalScore = currentGameMode == 'DAILY_CHALLENGE' ? cumAccuracy[2] : cumAccuracy[4];
 
   const modal = document.getElementById('leaderboard-modal') as HTMLDivElement;
   const subZone = document.getElementById('submission-zone') as HTMLDivElement;
@@ -371,15 +551,25 @@ const handleMouseUp = (): void => {
       console.log("2 second intermission");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       currentRound++;
-      if (currentRound <= 5) {
-        activePolygon = generateConvexPolygon(5 + currentRound);
-        while (activePolygon.length < 4) {
-          activePolygon = generateConvexPolygon(5 + currentRound);
+      if (currentGameMode === 'DAILY_CHALLENGE') {
+        if (currentRound <= 3) {
+          activePolygon = levels[currentRound - 1];
+          draw();
+          isDisplayingResult = false;
+        } else {
+          drawEndScreen();
         }
-        draw();
-        isDisplayingResult = false;
       } else {
-        drawEndScreen();
+        if (currentRound <= 5) {
+          activePolygon = generateConvexPolygon(5 + currentRound);
+          while (activePolygon.length < 4) {
+            activePolygon = generateConvexPolygon(5 + currentRound);
+          }
+          draw();
+          isDisplayingResult = false;
+        } else {
+          drawEndScreen();
+        }
       }
     }, 1800);
   }
@@ -482,7 +672,7 @@ function processSlice(lineStart:Point, lineEnd:Point) {
   }
 
   sliceSound.play();
-  
+
   shapeOne.push(pts[0]);
   shapeTwo.push(pts[0]);
   shapeOne.push(pts[1]);
@@ -578,16 +768,16 @@ function getArea(poly: Point[]): number {
   return Math.abs(area) / 2;
 }
 
-function generateConvexPolygon(numVertices: number): Point[] {
+function generateConvexPolygon(numVertices: number, random: () => number = Math.random): Point[] {
   const center = { x: 300, y: 350 };
   const angles: number[] = [];
 
   for (let i = 0; i < numVertices; i++) {
-    angles.push(Math.random() * Math.PI * 2);
+    angles.push(random() * Math.PI * 2);
   }
 
   return grahamScan(orderPolygonVertices(angles.map(angle => {
-    const radius = 120 + Math.random() * 90;
+    const radius = 120 + random() * 90;
     return {
       x: center.x + radius * Math.cos(angle),
       y: center.y + radius * Math.sin(angle)
@@ -621,4 +811,11 @@ function grahamScan(sortedVertices: Point[]) {
 
 function crossProduct(p1: Point, p2: Point, p3: Point) {
   return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y)* (p3.x - p1.x);
+}
+
+function getMsUntilMidnight(): number {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  return midnight.getTime() - now.getTime();
 }

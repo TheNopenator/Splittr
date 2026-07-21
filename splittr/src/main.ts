@@ -636,15 +636,25 @@ const handleTouchEnd = (): void => {
       console.log("2 second intermission");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       currentRound++;
-      if (currentRound <= 5) {
-        activePolygon = generateConvexPolygon(5 + currentRound);
-        while (activePolygon.length <= 3) {
-          activePolygon = generateConvexPolygon(5 + currentRound);
+      if (currentGameMode === 'DAILY_CHALLENGE') {
+        if (currentRound <= 3) {
+          activePolygon = levels[currentRound - 1];
+          draw();
+          isDisplayingResult = false;
+        } else {
+          drawEndScreen();
         }
-        draw();
-        isDisplayingResult = false;
       } else {
-        drawEndScreen();
+        if (currentRound <= 5) {
+          activePolygon = generateConvexPolygon(5 + currentRound);
+          while (activePolygon.length <= 3) {
+            activePolygon = generateConvexPolygon(5 + currentRound);
+          }
+          draw();
+          isDisplayingResult = false;
+        } else {
+          drawEndScreen();
+        }
       }
     }, 1800);
   }

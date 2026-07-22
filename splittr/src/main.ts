@@ -113,7 +113,7 @@ const DAILY_THEMES: DailyTheme[] = [
   { name: "Pizza Night", texturePath: "./textures/pizza.png" },
   { name: "Freshly Baked Bread", texturePath: "./textures/bread.png" },
   { name: "High Eggspectations", texturePath: "./textures/egg.png" },
-  { name: "Say Cheese", texturePath: "./textures/cheese.png" },
+  { name: "Say Cheese", texturePath: "./textures/cheddar.png" },
   { name: "Cookie Dough", texturePath: "./textures/cookie.png" },
   { name: "Mining for Diamonds", texturePath: "./textures/diamond.png" },
   { name: "Birthday Cake", texturePath: "./textures/cake.png" },

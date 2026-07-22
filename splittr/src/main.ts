@@ -215,6 +215,8 @@ function submitDailyScore(e?: Event) {
     e.preventDefault();
   }
 
+  localStorage.setItem('splittr_daily_last_played', String(getDailySeed()));
+
   const nameInput = document.getElementById('player-name-input') as HTMLInputElement;
   const submitBtn = document.getElementById('submit-score-btn') as HTMLButtonElement;
   const playerName = nameInput?.value?.trim();
@@ -388,6 +390,14 @@ function initStartScreen() {
   });
 
   dailyBtn.addEventListener('click', () => {
+    const todaySeed = String(getDailySeed());
+    const lastPlayed = localStorage.getItem('splittr_daily_last_played');
+
+    if (lastPlayed === todaySeed) {
+      alert("You've already completed today's challenge! Come back tomorrow for a new theme.");
+      return;
+    }
+
     if (Howler.ctx && Howler.ctx.state == 'suspended') {
       Howler.ctx.resume();
     }
@@ -399,7 +409,7 @@ function initStartScreen() {
     let levels = generateDailyLevels();
     activePolygon = levels[0];
     draw();
-  })
+  });
 }
 
 initStartScreen();

@@ -160,7 +160,7 @@ function generateDailyLevels() {
 
   levels = [];
   for (let i = 0; i < 3; i++) {
-    const numVertices: number = Math.floor(randomEngine() * 3) + 3;
+    const numVertices: number = Math.floor(randomEngine() * 4) + 3;
     levels.push(generateConvexPolygon(numVertices, randomEngine));
   }
   return levels;

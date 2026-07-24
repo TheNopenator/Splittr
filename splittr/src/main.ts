@@ -16,12 +16,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       A precision polygon-splitting game. Challenge yourself to achieve perfect 50/50 splits across 5 rounds and compete on the global leaderboard.
     </p>
     
-    <button id="start-game-btn" style="padding: 15px 40px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #ea932e, #292cc5); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
+    <button id="start-game-btn" style="padding: 15px 40px; margin: 5px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #ea932e, #292cc5); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
       START SPLITTING
     </button>
     <button id="daily-game-btn" style="padding: 15px 40px; margin: 20px 20px; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; background: linear-gradient(135deg, #2b9939, #b33cce); border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s;">
       DAILY CHALLENGE<br>
     </button>
+    <h5 style="padding: 15px 20px">Have any feedback? <a href="mailto:ricklee2487@gmail.com">Contact Us</a></h5>
   </div>
 </div>
 
